@@ -12,15 +12,12 @@
  */
 bool do_system(const char *cmd)
 {
-    if (cmd == NULL)
-        return false;
+    if (cmd == NULL) return false;
 
     int ret = system(cmd);
+    if (ret != 0) return false;
 
-    if (ret == -1)
-        return false;
-
-    return WIFEXITED(ret) && (WEXITSTATUS(ret) == 0);
+    return true;
 }
 
 /**
@@ -35,28 +32,28 @@ bool do_exec(int count, ...)
 
     char *command[count + 1];
     for (int i = 0; i < count; i++)
-    {
         command[i] = va_arg(args, char *);
-    }
-    command[count] = NULL;
 
+    command[count] = NULL;
     va_end(args);
+
+    // command[0] must be an absolute path (starts with '/')
+    if (command[0][0] != '/')
+        return false;
 
     pid_t pid = fork();
     if (pid == -1)
         return false;
-
-    if (pid == 0)
-    {
+    else if (pid == 0) {
         execv(command[0], command);
-        _exit(1); // execvp failed
+        exit(EXIT_FAILURE);
     }
 
     int status;
     if (waitpid(pid, &status, 0) == -1)
         return false;
 
-    return WIFEXITED(status) && (WEXITSTATUS(status) == 0);
+    return WIFEXITED(status) && WEXITSTATUS(status) == 0;
 }
 
 /**
@@ -72,34 +69,34 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
 
     char *command[count + 1];
     for (int i = 0; i < count; i++)
-    {
         command[i] = va_arg(args, char *);
-    }
-    command[count] = NULL;
 
+    command[count] = NULL;
     va_end(args);
+
+    // command[0] must be an absolute path
+    if (command[0][0] != '/')
+        return false;
 
     pid_t pid = fork();
     if (pid == -1)
         return false;
 
-    if (pid == 0)
-    {
+    if (pid == 0) {
         int fd = open(outputfile, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-        if (fd < 0)
-            _exit(1);
+        if (fd < 0) exit(EXIT_FAILURE);
 
         dup2(fd, STDOUT_FILENO);
-        dup2(fd, STDERR_FILENO);
         close(fd);
 
         execv(command[0], command);
-        _exit(1);
+        exit(EXIT_FAILURE);
     }
 
     int status;
     if (waitpid(pid, &status, 0) == -1)
         return false;
 
-    return WIFEXITED(status) && (WEXITSTATUS(status) == 0);
+    return WIFEXITED(status) && WEXITSTATUS(status) == 0;
 }
+
