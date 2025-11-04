@@ -8,10 +8,10 @@ set -u
 NUMFILES=10
 WRITESTR=AELD_IS_FUN
 WRITEDIR=/tmp/aeld-data
-username=$(cat conf/username.txt)
+username=$(cat ./conf/username.txt)
 
 # Determine assignment level
-assignment=$(cat ../conf/assignment.txt)
+assignment=$(cat ./conf/assignment.txt)
 
 # Detect if we are running in Buildroot target or natively
 if [ -d "/usr/bin" ] && [ -f "/usr/bin/writer" ]; then
@@ -56,9 +56,12 @@ then
     fi
 fi
 
-echo "Cleaning and rebuilding writer"
-make clean
-make
+# echo "Cleaning and rebuilding writer"
+# make clean
+# make
+
+echo "Skipping writer rebuild (make not available on target)"
+
 
 # Use writer binary (not script)
 for i in $(seq 1 $NUMFILES)
