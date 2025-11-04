@@ -45,6 +45,9 @@ make -j$(nproc) ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} all
 make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} modules
 make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} dtbs
 
+# Copy the built kernel image to OUTDIR so QEMU can find it automatically
+cp ${OUTDIR}/linux-stable/arch/${ARCH}/boot/Image ${OUTDIR}/
+
 fi
 
 # TODO: Create necessary base directories
