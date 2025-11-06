@@ -39,6 +39,10 @@ if [ ! -e ${OUTDIR}/linux-stable/arch/${ARCH}/boot/Image ]; then
     # TODO: Add your kernel build steps here
 
 echo "Building kernel..."
+
+sudo apt-get update
+sudo apt-get install -y gcc-aarch64-linux-gnu
+
 make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} mrproper
 make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} defconfig
 make -j$(nproc) ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} all
