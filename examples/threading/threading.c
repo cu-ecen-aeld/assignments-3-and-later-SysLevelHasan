@@ -14,6 +14,38 @@ void* threadfunc(void* thread_param)
     // TODO: wait, obtain mutex, wait, release mutex as described by thread_data structure
     // hint: use a cast like the one below to obtain thread arguments from your parameter
     //struct thread_data* thread_func_args = (struct thread_data *) thread_param;
+    
+    struct thread_data* thread_func_args = (struct thread_data *) thread_param;
+
+    if (thread_func_args == NULL) {
+        ERROR_LOG("thread_func_args is NULL");
+        pthread_exit(thread_param);
+    }
+
+    // Wait before obtaining mutex
+    usleep(thread_func_args->wait_to_obtain_ms * 1000);
+
+    // Obtain the mutex
+    if (pthread_mutex_lock(thread_func_args->mutex) != 0) {
+        ERROR_LOG("Failed to obtain mutex");
+        thread_func_args->thread_complete_success = false;
+        pthread_exit(thread_param);
+    }
+
+    // Wait before releasing mutex
+    usleep(thread_func_args->wait_to_release_ms * 1000);
+
+    // Release the mutex
+    if (pthread_mutex_unlock(thread_func_args->mutex) != 0) {
+        ERROR_LOG("Failed to release mutex");
+        thread_func_args->thread_complete_success = false;
+        pthread_exit(thread_param);
+    }
+
+    thread_func_args->thread_complete_success = true;
+
+    pthread_exit(thread_param);
+    
     return thread_param;
 }
 
@@ -28,6 +60,26 @@ bool start_thread_obtaining_mutex(pthread_t *thread, pthread_mutex_t *mutex,int 
      *
      * See implementation details in threading.h file comment block
      */
-    return false;
+    struct thread_data *thread_data = malloc(sizeof(struct thread_data));
+    if (thread_data == NULL) {
+        ERROR_LOG("Failed to allocate memory for thread_data");
+        return false;
+    }
+
+    // Initialize structure fields
+    thread_data->mutex = mutex;
+    thread_data->wait_to_obtain_ms = wait_to_obtain_ms;
+    thread_data->wait_to_release_ms = wait_to_release_ms;
+    thread_data->thread_complete_success = false;
+
+    // Create the thread
+    int rc = pthread_create(thread, NULL, threadfunc, thread_data);
+    if (rc != 0) {
+        ERROR_LOG("pthread_create failed with code %d", rc);
+        free(thread_data);
+        return false;
+    }
+
+    return true;
 }
 
